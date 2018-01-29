@@ -124,7 +124,21 @@ func (m *Messenger) addHandler(h MessageHandler) {
 	m.Unlock()
 }
 
+type jobSender struct {
+	handlers []MessageHandler
+	pck      *brokers.Package
+}
+
+//Execute ...
+func (j *jobSender) Execute() {
+	for _, h := range j.handlers {
+		h.OnMessage(j.pck)
+	}
+}
+
 func (m *Messenger) startMonitor() {
+	workers := NewWorkerPool(10)
+	workers.Start()
 	go func() {
 		for m.signal == 0x00 {
 			pck, err := m.Read()
@@ -133,8 +147,9 @@ func (m *Messenger) startMonitor() {
 				fmt.Println(err)
 				continue
 			}
-			for _, h := range m.handlers {
-				h.OnMessage(pck)
+			JobQueue <- &jobSender{
+				handlers: m.handlers,
+				pck:      pck,
 			}
 		}
 	}()
