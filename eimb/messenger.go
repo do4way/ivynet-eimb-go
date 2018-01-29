@@ -92,7 +92,7 @@ func (m *Messenger) Request(msg interface{}, t time.Duration) *promises.Promise 
 }
 
 //RegisterHandler ...
-func (m *Messenger) RegisterHandler(h MessageHandler) {
+func (m *Messenger) RegisterHandler(h MessageHandler, size ...int) {
 
 	if m.isHandlerRegistered(h) {
 		return
@@ -103,7 +103,7 @@ func (m *Messenger) RegisterHandler(h MessageHandler) {
 	}
 	m.Lock()
 	if !m.onMonitoring {
-		m.startMonitor()
+		m.startMonitor(size...)
 		m.onMonitoring = true
 	}
 	m.Unlock()
@@ -136,8 +136,12 @@ func (j *jobSender) Execute() {
 	}
 }
 
-func (m *Messenger) startMonitor() {
-	workers := NewWorkerPool(10)
+func (m *Messenger) startMonitor(size ...int) {
+	var threadsNum = 10
+	if len(size) >= 1 {
+		threadsNum = size[0]
+	}
+	workers := NewWorkerPool(threadsNum)
 	workers.Start()
 	go func() {
 		for m.signal == 0x00 {
