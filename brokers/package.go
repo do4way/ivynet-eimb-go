@@ -17,6 +17,7 @@ type Package struct {
 	Payload           string
 	CreatedAt         time.Time
 	channelKey        string
+	origStr           string
 	workingChannelKey string
 	failedChannelKey  string
 	failedAt          time.Time
@@ -24,6 +25,9 @@ type Package struct {
 }
 
 func (pack *Package) getString() string {
+	if pack.origStr != "" {
+		return pack.origStr
+	}
 	json, err := json.Marshal(pack)
 	if err != nil {
 		log.Printf("Queue failed to marshal content %v [%s]", pack, err.Error())
@@ -98,16 +102,15 @@ func BuildPackage(payload interface{}) (*Package, error) {
 }
 
 func marshal(payload interface{}) (string, error) {
-	msg := ""
+
 	switch payload.(type) {
 	case string:
-		msg = payload.(string)
+		return payload.(string), nil
 	default:
 		bytes, err := json.Marshal(payload)
 		if err != nil {
 			return "", err
 		}
-		msg = string(bytes)
+		return string(bytes), nil
 	}
-	return msg, nil
 }

@@ -107,6 +107,7 @@ func unmarshalPackage(input string) (*Package, error) {
 	if err != nil {
 		return nil, err
 	}
+	p.origStr = input
 	return p, nil
 }
 
